@@ -1,0 +1,97 @@
+from flask import (
+    Blueprint,
+    request,
+    jsonify
+)
+
+import requests
+import os
+
+from dotenv import (
+    load_dotenv
+)
+
+load_dotenv()
+
+chatbot_bp = Blueprint(
+    "chatbot",
+    __name__
+)
+
+API_KEY = os.getenv(
+    "GROQ_API_KEY"
+)
+
+
+@chatbot_bp.route(
+    "/chatbot",
+    methods=["POST"]
+)
+def chatbot():
+
+    try:
+
+        data = request.get_json()
+
+        message = data.get(
+            "message"
+        )
+
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Authorization":
+                f"Bearer {API_KEY}",
+
+                "Content-Type":
+                "application/json"
+            },
+            json={
+                "model":
+                "llama3-8b-8192",
+
+                "messages": [
+                    {
+                        "role":
+                        "system",
+
+                        "content":
+                        "You are a helpful study assistant."
+                    },
+                    {
+                        "role":
+                        "user",
+
+                        "content":
+                        message
+                    }
+                ]
+            }
+        )
+
+        result = (
+            response.json()
+        )
+
+        ai_reply = (
+            result["choices"][0]
+            ["message"]
+            ["content"]
+        )
+
+        return jsonify({
+            "reply":
+            ai_reply
+        })
+
+    except Exception as e:
+
+        print(
+            "CHATBOT ERROR:",
+            str(e)
+        )
+
+        return jsonify({
+            "error":
+            str(e)
+        }), 500
